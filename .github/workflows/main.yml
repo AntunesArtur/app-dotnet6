@@ -65,13 +65,18 @@ jobs:
         run: |
           ssh -i ec2-key.pem -o StrictHostKeyChecking=no ${{ secrets.AWS_EC2_USER }}@${{ secrets.AWS_EC2_HOST }} << 'EOF'
             # Atualizar pacotes
-            sudo apt-get update
+            sudo yum update -y
 
             # Instalar Docker se não estiver instalado
             if ! [ -x "$(command -v docker)" ]; then
-              sudo apt install -y docker.io
+              sudo yum install -y docker
               sudo systemctl start docker
               sudo systemctl enable docker
+            fi
+
+            # Instalar Git se não estiver instalado
+            if ! [ -x "$(command -v git)" ]; then
+              sudo yum install -y git
             fi
 
             # Clonar o repositório na EC2
