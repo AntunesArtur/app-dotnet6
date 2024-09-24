@@ -1,0 +1,95 @@
+name: Build and Deploy to AWS EC2
+
+on:
+  # push:
+  #   branches:
+  #     - main  # Executa o workflow em cada push na branch principal
+
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Escolha a nuvem'
+        required: true
+        default: 'aws'
+        type: choice
+        options:
+          - aws
+          - azure
+          - google
+          - oracle
+
+      descricao:
+        description: 'Descricao'
+        required: true
+        type: string
+
+      logico:
+        description: 'Sim ou Nao - hfhdhfh'
+        required: true
+        type: boolean
+
+      ambiente:
+        description: 'Qual o ambiente de trabalho'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    if: ${{ inputs.logLevel == 'aws' }}
+    
+    steps:
+      # Passo 1: Checkout do repositório
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      # Passo 2: Configurar .NET 6 no ambiente do runner
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+
+      # Passo 3: Fazer build do projeto
+      - name: Build .NET Project
+        run: dotnet build --configuration Release
+
+      # Passo 4: Preparar chave SSH para acesso à instância EC2
+      - name: Set up SSH key
+        run: |
+          echo "${{ secrets.AWS_EC2_KEY }}" > ec2-key.pem
+          chmod 400 ec2-key.pem
+
+      # Passo 5: Conectar via SSH na EC2 e executar os comandos
+      - name: Deploy to EC2 via SSH
+        run: |
+          ssh -i ec2-key.pem -o StrictHostKeyChecking=no ${{ secrets.AWS_EC2_USER }}@${{ secrets.AWS_EC2_HOST }} << 'EOF'
+            # Atualizar pacotes
+            sudo apt-get update
+
+            # Instalar Docker se não estiver instalado
+            if ! [ -x "$(command -v docker)" ]; then
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
+              sudo systemctl enable docker
+            fi
+
+            # Clonar o repositório na EC2
+            if [ ! -d "app-repo" ]; then
+              git clone https://github.com/username/app-repo.git
+            else
+              cd app-repo && git pull origin main
+            fi
+
+            cd app-repo
+
+            # Construir a imagem Docker a partir do Dockerfile
+            sudo docker build -t ${{ secrets.DOCKER_IMAGE_NAME }} .
+
+            # Parar e remover qualquer contêiner em execução com o mesmo nome
+            sudo docker stop app-container || true
+            sudo docker rm app-container || true
+
+            # Iniciar um novo contêiner com a imagem criada
+            sudo docker run -d --name app-container -p 80:80 ${{ secrets.DOCKER_IMAGE_NAME }}
+          EOF
