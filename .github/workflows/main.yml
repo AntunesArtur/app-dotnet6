@@ -69,14 +69,14 @@ jobs:
 
             # Instalar Docker se não estiver instalado
             if ! [ -x "$(command -v docker)" ]; then
-              sudo apt-get install -y docker.io
+              sudo apt install -y docker.io
               sudo systemctl start docker
               sudo systemctl enable docker
             fi
 
             # Clonar o repositório na EC2
             if [ ! -d "app-repo" ]; then
-              git clone https://github.com/username/app-repo.git
+              git clone ${{ secrets.REPOSITORIO }}
             else
               cd app-repo && git pull origin main
             fi
