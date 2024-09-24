@@ -5,13 +5,12 @@ on:
   #   branches:
   #     - main  # Executa o workflow em cada push na branch principal
 
-# Allows you to run this workflow manually from the Actions tab para dar opção de escolha
   workflow_dispatch:
     inputs:
       logLevel:
         description: 'Escolha a nuvem'
         required: true
-        default: aws
+        default: 'aws'
         type: choice
         options:
           - aws
@@ -27,19 +26,20 @@ on:
       logico:
         description: 'Sim ou Nao - hfhdhfh'
         required: true
-        type: bloolean
+        type: boolean
 
       ambiente:
         description: 'Qual o ambiente de trabalho'
         required: true
-        type: environment
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
     if: ${{ inputs.logLevel == 'aws' }}
-      steps:
+    
+    steps:
       # Passo 1: Checkout do repositório
       - name: Check out repository
         uses: actions/checkout@v3
