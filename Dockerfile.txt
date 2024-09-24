@@ -1,0 +1,28 @@
+# Etapa 1: Compilação da aplicação (build stage)
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+
+# Definir o diretório de trabalho dentro do contêiner
+WORKDIR /app
+
+# Copiar os arquivos .csproj e restaurar as dependências (usando cache de camadas)
+COPY *.csproj ./
+RUN dotnet restore
+
+# Copiar o restante dos arquivos da aplicação e compilar o projeto
+COPY . .
+RUN dotnet publish -c Release -o /app/publish
+
+# Etapa 2: Imagem final (runtime stage)
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS runtime
+
+# Definir o diretório de trabalho na etapa de runtime
+WORKDIR /app
+
+# Copiar os artefatos de build da etapa anterior
+COPY --from=build /app/publish .
+
+# Expor a porta em que a aplicação será executada (por exemplo, porta 80)
+EXPOSE 80
+
+# Comando de inicialização da aplicação
+ENTRYPOINT ["dotnet", "app_net6.dll"]
