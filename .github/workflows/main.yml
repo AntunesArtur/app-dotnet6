@@ -80,13 +80,13 @@ jobs:
             fi
 
             # Clonar o repositório na EC2
-            if [ ! -d "app-repo" ]; then
+            if [ ! -d "app-dotnet6" ]; then
               git clone ${{ secrets.REPOSITORIO }}
             else
-              cd app-repo && git pull origin main
+              cd app-dotnet6 && git pull origin main
             fi
 
-            cd app-repo
+            cd app-dotnet6
 
             # Construir a imagem Docker a partir do Dockerfile
             sudo docker build -t ${{ secrets.DOCKER_IMAGE_NAME }} .
